@@ -2,11 +2,13 @@ const path = require('path');
 
 const express = require('express');
 const bodyParser = require('body-parser');
+const dotenv = require('dotenv');
 
 const errorController = require('./controllers/error');
 const mongoConnect = require('./util/database').mongoConnect;
 const User = require('./models/user');
 
+dotenv.config();
 
 const app = express();
 

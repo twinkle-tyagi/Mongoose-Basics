@@ -7,7 +7,7 @@ const MongoClient = mongodb.MongoClient; //constructor
 let _db; // so that we dont call mongoConnect for each operation
 
 const mongoConnect = callback => {
-  MongoClient.connect('mongodb+srv://admin:Light12@cluster0.1ub4dke.mongodb.net/?retryWrites=true&w=majority')
+  MongoClient.connect(`mongodb+srv://${process.env.MONGO_HOST}:${process.env.MONGO_PASSWORD}@cluster0.1ub4dke.mongodb.net/?retryWrites=true&w=majority`)
   .then(client => {
     console.log('connected');
     _db = client.db(); // store connection to database

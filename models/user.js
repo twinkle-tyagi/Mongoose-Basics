@@ -81,7 +81,6 @@ class User {
     }
     });
    });
-
   }
 
 
@@ -94,6 +93,41 @@ class User {
     .updateOne(
       {_id: new mongodb.ObjectId(this._id)},
       { $set: {cart: {items: updateCartItem}}} );
+  }
+
+  addOrder() {
+    const db = getDB();
+    return this.getCart()    // step1 - we get array of products using getCarts
+    .then(products => {
+      const order = {   // step2 - we create order using product
+        items: products,
+        user: {
+          _id: new mongodb.ObjectId(this._id),
+          name: this.name
+        }
+      };
+      //step3 - insert this data into orders collection
+      return db.collection('orders').insertOne(order) //we just want to enter everything in cart to order, we can do so using this.cart
+    })
+    //step4 - clean up existing cart.
+    .then(result => {
+      this.cart ={items: []}; //empty the cart, but we have to empty it in database also.
+      
+      //update cart to empty.
+      return db.collection('users')
+      .updateOne(
+        {_id: new mongodb.ObjectId(this._id)},
+        {$set: {cart: {items: []}}}
+      )
+    })
+  }
+
+
+  getOrders() {
+    const db = getDB();
+    return db.collection('orders').find({'user._id': new mongodb.ObjectId(this._id)}) // to check nested properties by defining path to them, to define path we add them in quotation mark
+//._id will look for _id in user which is embedded(nested) into orders. we then compare it with _id from DB
+    .toArray()  //as there may be many orders for same user so we will convert it into array
   }
 
 

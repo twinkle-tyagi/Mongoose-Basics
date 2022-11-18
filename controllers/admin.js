@@ -15,21 +15,18 @@ exports.postAddProduct = (req, res, next) => {
   const price = req.body.price;
   const description = req.body.description;
 
-  // we will not user req.user but create object of product and then we can call save() 
-  const product = new Product(title, price, description, imageUrl, null, req.user._id);
-// null here for product id as it is not created yet, req.user._id to get user's userId and add it while creating product.
-// we sent this user object from app.js (req.user = user)
-  /*
-  req.user
-    .createProduct({
+  // to create product
+  const product = new Product({
       title: title,
       price: price,
+      description: description,
       imageUrl: imageUrl,
-      description: description
+      //userId: req.user._id, // save userId like this OR we can do like this
+      userId: req.user  // in mongoose you can store whole object and mongoose will find and get only what it needs
+      // here mongoose  will find _id from req.user object and assign it to userId
     })
-  */
 
-    product.save()
+    product.save()  // this save() is provided by mongoose
     .then(result => {
       // console.log(result);
       console.log('Created Product');
@@ -57,7 +54,7 @@ exports.getEditProduct = (req, res, next) => {
         pageTitle: 'Edit Product',
         path: '/admin/edit-product',
         editing: editMode,
-        product: product
+        product: product,
       });
     })
     .catch(err => console.log(err));
@@ -70,17 +67,20 @@ exports.postEditProduct = (req, res, next) => {
   const updatedPrice = req.body.price;
   const updatedImageUrl = req.body.imageUrl;
   const updatedDesc = req.body.description;
-  //Product.findById(prodId)
+  
+  //find product to update
+  Product.findById(prodId)
+  .then(product => {  // here product is not JS object but mongoose object
+    
+    // update product with new values
+    product.title = updatedTitle;
+    product.price = updatedPrice;
+    product.description = updatedDesc;
+    product.imageUrl = updatedImageUrl;
 
-  const product = new Product(
-      updatedTitle,
-      updatedPrice,
-      updatedDesc,
-      updatedImageUrl,
-      //new mongodb.ObjectId(prodId) // we can simply pass prodId and modify our code a little at product.js
-      prodId
-    );
-    product.save()
+    // if we call save() on existing mongoose object, it will not create new, but only the changes will be saved
+    return product.save();  
+  })
     .then(result => {
       console.log('UPDATED PRODUCT!');
       res.redirect('/admin/products');
@@ -90,10 +90,18 @@ exports.postEditProduct = (req, res, next) => {
 
 
 exports.getProducts = (req, res, next) => {
-  //req.user
-  //  .getProducts()
-  Product.fetchAll()
+  Product.find()  
+// select is used to select only specific data we need. ID will get selected unless excluded
+// can exclude some data using -, ex    -price
+//  .select('title price -_id') // will only give title and price and will exclude id.
+
+
+// Product.find() will find all product, but if we want to find user info associated with product, we have to manually do findById() for each user
+// to do automatically we can use populate().
+//populate() populates the specified field with info associated with it, we dont have to do it manually
+//    .populate('userId') // will find all detail using userId and fill it in userId
     .then(products => {
+      console.log(products);  // we will now get complete user info in userId field.
       res.render('admin/products', {
         prods: products,
         pageTitle: 'Admin Products',
@@ -105,7 +113,13 @@ exports.getProducts = (req, res, next) => {
 
 exports.postDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
-  Product.deleteById(prodId)
+/*
+  Product.findById(prodId)
+  .then(product => {
+    return product.remove();
+  })
+  */
+  Product.findByIdAndRemove(prodId) // provided by mongoose
     .then(result => {
       console.log('DESTROYED PRODUCT');
       res.redirect('/admin/products');

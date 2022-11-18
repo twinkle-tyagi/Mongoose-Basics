@@ -3,9 +3,9 @@ const path = require('path');
 const express = require('express');
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
+const mongoose = require('mongoose');
 
 const errorController = require('./controllers/error');
-const mongoConnect = require('./util/database').mongoConnect;
 const User = require('./models/user');
 
 dotenv.config();
@@ -23,10 +23,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use((req, res, next) => {
   
-  User.findById('63751ae91691a266318da357')
+  User.findById('63774b27ba1f1bd5c54cdf7a')
     .then(user => {
-      //req.user = user; // send user in request. // we cannot access functions of user here
-      req.user = new User(user.name, user.email, user.cart, user._id); // we can make user like this
+      req.user = user; // send user in request. 
       next();
     })
     .catch(err => console.log(err));
@@ -37,14 +36,25 @@ app.use(shopRoutes);
 
 app.use(errorController.get404);
 
-/*
-mongoConnect((client) => {
-  console.log(client);
+mongoose.connect(`mongodb+srv://${process.env.MONGO_HOST}:${process.env.MONGO_PASSWORD}@cluster0.1ub4dke.mongodb.net/?retryWrites=true&w=majority`)
+.then(result => {
+  User.findOne()    //findOne without any argument will return first element 
+  .then(user => {
+//if user is not there we create it, otherwise we don't.
+    if(!user) {
+      const user = new User({ // to create a new user
+        // user will contain name, email and cart and cart will have empty array of items.
+          name: 'Max',
+          email: "max@gmail.com",
+          cart: {
+            items: []
+          }
+        });
+        user.save(); //to add user to database
+    }
+  }) 
   app.listen(3000);
 })
-*/
-
-//after 
-mongoConnect(() => {  // we won't get client now
-  app.listen(3000);
-})
+.catch(err => {
+  console.log(err);
+});

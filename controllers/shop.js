@@ -1,7 +1,7 @@
 const Product = require('../models/product');
 
 exports.getProducts = (req, res, next) => {
-  Product.fetchAll()
+  Product.find()    // doesnot give cursor but gives products.
     .then(products => {
       res.render('shop/product-list', {
         prods: products,
@@ -16,16 +16,8 @@ exports.getProducts = (req, res, next) => {
 
 exports.getProduct = (req, res, next) => {
   const prodId = req.params.productId;
-  // Product.findAll({ where: { id: prodId } })
-  //   .then(products => {
-  //     res.render('shop/product-detail', {
-  //       product: products[0],
-  //       pageTitle: products[0].title,
-  //       path: '/products'
-  //     });
-  //   })
-  //   .catch(err => console.log(err));
-  Product.findById(prodId)
+  // prodId is string, but _id is ObjectId type, mongoose converts prodId to ObjectId type automatically
+  Product.findById(prodId)  //findById() is method provided by mongoose
     .then(product => {
       res.render('shop/product-detail', {
         product: product,
@@ -37,7 +29,7 @@ exports.getProduct = (req, res, next) => {
 };
 
 exports.getIndex = (req, res, next) => {
-  Product.fetchAll()
+  Product.find()
     .then(products => {
       res.render('shop/index', {
         prods: products,
@@ -51,9 +43,12 @@ exports.getIndex = (req, res, next) => {
 };
 
 exports.getCart = (req, res, next) => {
-  req.user
-    .getCart()
-    .then(products => {
+  //console.log(req.user)
+  req.user    // will get cart, we need to populate on productID
+    .populate('cart.items.productId')
+    //.execPopulate()   //populate do not return promise, so we cannot call then on it, to do so we can use execPopulate()
+    .then(user => {
+      const products = user.cart.items;
           res.render('shop/cart', {
             path: '/cart',
             pageTitle: 'Your Cart',

@@ -60,6 +60,10 @@ userSchema.methods.removeFromCart = function(productId) {
     return this.save();
 }
 
+userSchema.methods.clearCart = function() {
+    this.cart = {items: []};    // items as empty array
+    return this.save();         //save it
+}
 
 module.exports = mongoose.model('User', userSchema);
 

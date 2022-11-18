@@ -1,4 +1,5 @@
 const Product = require('../models/product');
+const Order = require('../models/order');
 
 exports.getProducts = (req, res, next) => {
   Product.find()    // doesnot give cursor but gives products.
@@ -114,11 +115,37 @@ exports.postCartDeleteProduct = (req, res, next) => {
 };
 
 exports.postOrder = (req, res, next) => {
-  let fetchedCart;
   req.user
-    .addOrder()
+  .populate('cart.items.productId')
+  //.execPopulate()
+  .then(user => {
+    // const products = user.cart.items; // here we have array elements where we have quantity and real product data is nested in productId field, so we need to extract that data
+// we need to map this products data according to Order model, for that we can use map()
+
+    console.log(user.cart.items);
+    const products = user.cart.items.map(i => {
+      //return {quantity: i.quantity, product: i.productId}   // we make object according to our Order model and then return it
+      // right now we will not get full product in product field above but just productId 
+      //to get full product we make new JS object by wrapping i.productId in {}, using spread operator to get all data of it
+      // and use special method _doc that mongoose provides us.
+      // productId is an object with lot of meta data attached to it, so we can use _doc on it
+      // with _doc we just get just data from productId and using spread operator we pull out all the data from document we used _doc on(productId)
+      return {quantity: i.quantity, product: {...i.productId._doc}};
+    })
+    const order = new Order({
+      user: {
+        name: req.user.name,
+        userId: req.user  // mongoose will extract userId automatically
+      },
+      products: products
+    });
+    return order.save();
+  })
     .then(result => {
-      res.redirect('/orders');
+      return req.user.clearCart();  //clear cart
+    })
+    .then(() => {
+      res.redirect('/orders');    //then re-route
     })
     .catch(err => console.log(err));
 };

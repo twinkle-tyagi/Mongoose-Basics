@@ -43,7 +43,6 @@ exports.getIndex = (req, res, next) => {
 };
 
 exports.getCart = (req, res, next) => {
-  //console.log(req.user)
   req.user    // will get cart, we need to populate on productID
     .populate('cart.items.productId')
     //.execPopulate()   //populate do not return promise, so we cannot call then on it, to do so we can use execPopulate()
@@ -107,7 +106,7 @@ exports.postCart = (req, res, next) => {
 exports.postCartDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
   req.user
-    .deleteFromCart(prodId)
+    .removeFromCart(prodId)
     .then(result => {
       res.redirect('/cart');
     })

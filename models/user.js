@@ -26,7 +26,6 @@ const userSchema = new Schema({
 userSchema.methods.addToCart = function(product) {
     
     const cartProductIndex = this.cart.items.findIndex(cp => { // to find whether item with given index is in items array in cart or not.
-        console.log(cp.productId, product._id);
         return cp.productId.toString() === product._id.toString();  // cp is a function to check.
     // if already in cart we just increase quantity otherwise add item to cart.
     });
@@ -53,32 +52,14 @@ userSchema.methods.addToCart = function(product) {
     return this.save(); // save() will update if element exists, otherwise create new 
 }
 
-/*
-userSchema.methods.getCart = function() {
-  
-    return this.cart.items.find()
-    .populate('productId')
-    .then(product => {
-        console.log(product);
-    })
-    /*
-   const productIds = this.cart.items.map(i => { 
-    return i.productId;
-   });
-   
-   // we use $in operator, $in takes array of ids and every id in array will be accept and give a cursor which holds references to all products with reference to one of the ids mention in the array.
-   return db.collection('products').find({_id: {$in: productIds}}) // it gives a cursor
-   .toArray() // to convert cursor to array
-   .then(products => {
-    return products.map(p => {  // now product also need quantity, so find each product from cart fetch its quantity and add it.
-      return {...p, quantity: this.cart.items.find( i => {  //... is spread operator and will give all product values to this object
-        return i.productId.toString() === p._id.toString(); // will match productId we storing in cart items with _id we fetched from DB
-      }).quantity // will give product object, we need quantity, so use .quantity
-    }
+userSchema.methods.removeFromCart = function(productId) {
+    const updateCartItem = this.cart.items.filter(item => { //filter out element that match productId
+        return item.productId.toString() !== productId.toString();
     });
-   });
-   */
-//}
+    this.cart.items = updateCartItem;
+    return this.save();
+}
+
 
 module.exports = mongoose.model('User', userSchema);
 
